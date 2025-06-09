@@ -50,7 +50,8 @@ module all_module_ckt(
     wire [image_row_add_bit-1:0] row_ker;
     wire [image_col_add_bit-1:0] col_ker;
     wire [buffer_add_bit-1:0] ip_buff_add;
-    wire [7:0] op_buff_row,op_buff_col;
+    wire [7:0] op_buff_row;
+    wire [7:0] op_buff_col;
     
     //the common 24  bit data bus
     wire [data_width*kernel_size-1:0] data_bus;
@@ -65,7 +66,7 @@ module all_module_ckt(
     .op_buff_row(op_buff_row),.op_buff_col(op_buff_col));
     
     //the image memory [x]
-    image_memory img_mem(.row_add(row_ker),.col_add(col_ker),.r_w(rw_mem),.data_out(data_bus),.clk(clk));//not using data_in and reset pins
+    image_memory img_mem(.row_add(row_ker),.col_add(col_ker),.r_w(0),.data_out(data_bus),.clk(clk));//not using data_in and reset pins
     
     //ip_buffer stage
     input_buffer ip_buff(.input_add(ip_buff_add), .mode(ip_buff_mode), .clk(clk),
@@ -75,5 +76,5 @@ module all_module_ckt(
      core cc(.ip_buffer_data_in(ip_buff_data_out), .load_data(core_data_load), .data_out(core_op),.ready(core_ready));
     
      //op_buffer and storage
-     output_storage op_store(.ready_signal(core_ready),.core_out(core_op),.ip_row(op_buff_row),.ip_col(op_buff_col),.r_w(op_buff_write));
+     output_storage op_store(.ready_signal(core_ready),.core_out(core_op),.ip_row(op_buff_row),.ip_col(op_buff_col));
 endmodule
