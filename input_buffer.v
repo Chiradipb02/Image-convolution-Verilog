@@ -44,17 +44,27 @@ module input_buffer(
 
     generate
         for (i = 0; i < channel_num; i = i + 1) begin : make_the_buffer
-            wire this_clk = (i == grp_sel) ? clk : 1'b0;
-            wire mode_this=(i==grp_sel) ? mode :1'b0;
+        //VV RISKY APPROACH: TO USE THIS KIND OF CLOCK GATING(CAN USE ENABLE INSTEAD), 1 WRONG SELECTION/RACING AND U ARE DONE
+        //BUG: WHEN GRP NUM CHANGES, THE ADJACENT GROUPS GO THROUGH SAME OPERATION TOGETHER
+        //IF THE GRP NUMBER DOES NOT MATCH, PROVIDE HIGH Z TO AVOID ANY KIND OF CLK LEVEL CHANGING
+        //USING DEFAULT 0 RESULTS IN AN EXTRA NEGATIVE EDGE AND AS THE GRP_SEL AT JUST BEFORE
+        //MOMENT IS 0 THE MODULO OPERATOR ACTS FAST AND GIVES 0, THUS RESULTING IN LOADING THE
+        //ROW:2 DATA TO THE ROW 0 REGISTER OF THE SAME GROUP AGAIN
+        
+            wire enable=(i==grp_sel) ? 1:0;//<-- final fix
+            //wire this_clk = (i == grp_sel) ? clk : 1'b0;
+            //wire mode_this=(i==grp_sel) ? mode :'bz;
             shuffle_buffer buff (
-                .clk(this_clk),
+                .clk(clk),.enable(enable),
                 .data_in(data_in),
                 .row_add(row_sel),
-                .mode(mode_this),
+                .mode(mode),
                 .data_out(data_out[ip_buffer_size-1 - i*shuffle_buffer_width -: shuffle_buffer_width]),
                 .reset(reset),
                 .op_enable(op_enable)
             );
+            
+            //assign ip_buff_op[ (i+1)*shuffle_buffer_width-1 : i*shuffle_buffer_width ] = shuffle_buffers[i].data_out;
         end
     endgenerate
 
